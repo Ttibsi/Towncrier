@@ -22,7 +22,7 @@ int main() {
     }
 
     if (access(DB_NAME, F_OK) != 0) {
-        setup_database(&db);
+        setup_database(db);
     }
 
     return 0;
