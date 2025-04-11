@@ -1,0 +1,52 @@
+---
+BasedOnStyle: Google
+AlignAfterOpenBracket: AlwaysBreak
+AllowShortIfStatementsOnASingleLine: WithoutElse
+ColumnLimit: '100'
+Cpp11BracedListStyle: 'false'  # Changed for C-style brace lists
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Standard C library headers (e.g., <stdio.h>, <stdlib.h>)
+  - Regex: '<(assert|complex|ctype|errno|fenv|float|inttypes|iso646|limits|locale|math|setjmp|signal|stdalign|stdarg|stdatomic|stdbool|stddef|stdint|stdio|stdlib|stdnoreturn|string|tgmath|threads|time|uchar|wchar|wctype)\.h>'
+    Priority: 1
+    SortPriority: 1
+    CaseSensitive: false
+
+  # POSIX/System headers
+  - Regex: '<(aio|arpa/inet|cpio|dirent|dlfcn|fcntl|fmtmsg|fnmatch|ftw|glob|grp|iconv|langinfo|libgen|monetary|mqueue|ndbm|netdb|net/if|netinet/in|netinet/tcp|nl_types|poll|pthread|pwd|regex|sched|search|semaphore|spawn|strings|stropts|sys/ipc|syslog|sys/mman|sys/msg|sys/resource|sys/select|sys/sem|sys/shm|sys/socket|sys/stat|sys/statvfs|sys/time|sys/times|sys/types|sys/uio|sys/un|sys/utsname|sys/wait|tar|termios|trace|ulimit|unistd|utime|utmpx|wordexp)\.h>'
+    Priority: 2
+    SortPriority: 2
+    CaseSensitive: false
+
+  # Third-party headers (enclosed in <>, but not standard library)
+  - Regex: '<.+[/0-9a-z_]*\.h>'
+    Priority: 3
+    SortPriority: 3
+    CaseSensitive: false
+
+  # Project headers (enclosed in "", without paths)
+  - Regex: '"[^/]*\.h"'
+    Priority: 4
+    SortPriority: 4
+    CaseSensitive: false
+
+  # Project headers (enclosed in "", with paths)
+  - Regex: '".*/.+\.h"'
+    Priority: 5
+    SortPriority: 5
+    CaseSensitive: false
+IndentWidth: '4'
+Language: C  # Changed from Cpp to C
+PointerAlignment: Left
+ReflowComments: 'true'
+SpaceBeforeParens: ControlStatements
+SpacesInContainerLiterals: 'true'
+TabWidth: '4'
+UseTab: Never
+AllowShortFunctionsOnASingleLine: None
+AlignConsecutiveMacros: 'true'  # Helpful for C which often uses more macros
+IndentCaseLabels: 'false'  # Typical C style
+AlignEscapedNewlines: Left
+BreakStringLiterals: 'true'
+AlignConsecutiveAssignments: 'false'
+AlignTrailingComments: 'true'
