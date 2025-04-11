@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 #include <unistd.h>
@@ -11,9 +12,9 @@
 #define DB_NAME "towncrier.db"
 
 // [x] Include sqlite, if a db doesn't exist, create it
-// [ ] When time is right (sunday, midnight), fork and run all-repos
-// [ ] Once all-repos runs, update db with last all-repos run time
-// [ ] DB also tracks when each backup was made
+// [x] When time is right (sunday, midnight), fork and run all-repos
+// [x] Once all-repos runs, update db with last all-repos run time
+// [x] DB also tracks when each backup was made
 // [ ] When it recieves a "hello" ping fro Peasant, return a message with all the current status
 // values
 
@@ -49,13 +50,15 @@ static int callback(void* a, int b, char** c, char** d) {
     (void)c;
     (void)d;
 
-    a = b;
-    return 0;
+    a = &b;
+    return a - a;
 }
 
-int check_extant_record_today(struct tm* now) {
-    char* cmd = "SELECT COUNT(*) * FROM towncrier WHERE backup_time LIKE %";
-    sprintf(cmd, "\s\s-\s-\s%", cmd, now->tm_year, now->tm_mon, now->yday);
+int check_extant_record_today(sqlite3* db, struct tm* now) {
+    char* cmd = malloc(sizeof(char) * 255);
+    sprintf(
+        cmd, "SELECT COUNT(*) * FROM towncrier WHERE backup_time LIKE %%%d-%d-%d%%", now->tm_year,
+        now->tm_mon, now->tm_yday);
     char* errmsg = 0;
     int out = 0;
 
@@ -65,6 +68,8 @@ int check_extant_record_today(struct tm* now) {
         nob_log(NOB_ERROR, "SQL error: %s\n", errmsg);
         sqlite3_free(errmsg);
     }
+
+    free(cmd);
 
     return out;
 }
@@ -87,7 +92,7 @@ int main() {
 
         // Only trigger on sunday
         if (tmp->tm_wday == 7) {
-            if (check_extant_record_today(tmp)) {
+            if (check_extant_record_today(db, tmp)) {
                 continue;
             }
 
