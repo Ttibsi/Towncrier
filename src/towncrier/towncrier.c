@@ -1,7 +1,11 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include "sqlite/sqlite3.h"
@@ -23,7 +27,7 @@ void setup_database(sqlite3* db) {
         "CREATE TABLE towncrier("
         "id integer primary key not null,"
         "backup_time text default CURRENT_TIMESTAMP,"
-        "backup_completed integer,"
+        "backup_completed integer default 0,"
         "completion_time text"
         ");";
 
@@ -34,6 +38,49 @@ void setup_database(sqlite3* db) {
         sqlite3_free(errmsg);
     } else {
         nob_log(NOB_INFO, "Constructing db...");
+    }
+}
+
+int setup_server(void) {
+    int s = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    struct sockaddr_in addr = { .sin_family = AF_INET,
+                                .sin_port = htons(8080),
+                                .sin_addr.s_addr = INADDR_ANY };
+
+    bind(s, (struct sockaddr*)&addr, sizeof(addr));
+    listen(s, 8);
+
+    return s;
+}
+
+void mark_completed_backup(sqlite3* db) {
+    const char* cmd =
+        "UPDATE towncrier"
+        "SET (backup_completed, completion_time) = (1, CURRENT_TIMESTAMP)"
+        "WHERE backup_time == (SELECT MAX(backup_time) FROM towncrier);";
+
+    char* errmsg = 0;
+    int ret = sqlite3_exec(db, cmd, NULL, 0, &errmsg);
+    if (ret != SQLITE_OK) {
+        nob_log(NOB_ERROR, "SQL error: %s\n", errmsg);
+        sqlite3_free(errmsg);
+    }
+}
+
+const char* get_backup_status(sqlite3* db, int* out_len) {
+    // TODO: Send backup status
+    // Step 1 - Get the number of records at the bottom of the table with no backup set
+    // Step 2 - If 0, send() ok message to client
+    // Step 3 - If not 0, send() client message to backup
+}
+
+const char* parse_message(sqlite3* db, const char* buffer, int* out_len) {
+    if (strncmp(buffer, "ping", 4) == 0) {
+        return get_backup_status(db, out_len);
+    } else if (strncmp(buffer, "backup", 6) == 0) {
+        mark_completed_backup(db);
+        *out_len = 16;
+        return "backup complete\n";
     }
 }
 
@@ -54,6 +101,7 @@ static int callback(void* a, int b, char** c, char** d) {
     return a - a;
 }
 
+// TODO: Ensure not completed
 int check_extant_record_today(sqlite3* db, struct tm* now) {
     char* cmd = malloc(sizeof(char) * 255);
     sprintf(
@@ -82,15 +130,27 @@ int main() {
     }
 
     setup_database(db);
-    return 0;
 
+    int sock_fd = setup_server();
+
+    // Required for time checking
     struct tm* tmp;
 
     while (true) {
         time_t timepoint = time(NULL);
         tmp = localtime(&timepoint);
 
-        // Only trigger on sunday
+        // Handle message from client
+        char buffer[265] = { 0 };
+        int client_fd = accept4(s, 0, 0, SOCK_NONBLOCK);
+
+        recv(client_fd, buffer, 256, 0);
+        int out_len = 0;
+        const char* msg = parse_message(db, buffer, *out_len);
+        send(client_fd, msg, out_len, 0);
+        close(client_fd);
+
+        // Only trigger on sunday -- handle backups
         if (tmp->tm_wday == 7) {
             if (check_extant_record_today(db, tmp)) {
                 continue;
