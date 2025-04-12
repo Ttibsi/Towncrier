@@ -67,11 +67,41 @@ void mark_completed_backup(sqlite3* db) {
     }
 }
 
+static int callback2(void* a, int b, char** c, char** d) {
+    (void)c;
+    (void)d;
+
+    a = &b;
+    return a - a;
+}
+
 const char* get_backup_status(sqlite3* db, int* out_len) {
-    // TODO: Send backup status
-    // Step 1 - Get the number of records at the bottom of the table with no backup set
+    const char* cmd =
+        "SELECT row_nr - 1"
+        "FROM ("
+        "SELECT ROW_NUMBER() OVER (ORDER BY id DESC) AS row_nr, backup_completed"
+        "FROM towncrier"
+        ") WHERE backup_completed = 1"
+        "LIMIT 1;";
+
+    char* errmsg = 0;
+    int out = 0;
+
+    int ret = sqlite3_exec(db, cmd, callback2, &out, &errmsg);
+    if (ret != SQLITE_OK) {
+        nob_log(NOB_ERROR, "SQL error: %s\n", errmsg);
+        sqlite3_free(errmsg);
+    }
+
     // Step 2 - If 0, send() ok message to client
     // Step 3 - If not 0, send() client message to backup
+    if (!out) {
+        *out_len = 0;
+        return "";
+    } else {
+        *out_len = 0;
+        return "";
+    }
 }
 
 const char* parse_message(sqlite3* db, const char* buffer, int* out_len) {
@@ -93,7 +123,7 @@ void call_all_repos(void) {
     execl(cmd, "-C", "all-repos.json", NULL);
 }
 
-static int callback(void* a, int b, char** c, char** d) {
+static int callback1(void* a, int b, char** c, char** d) {
     (void)c;
     (void)d;
 
@@ -110,7 +140,7 @@ int check_extant_record_today(sqlite3* db, struct tm* now) {
     char* errmsg = 0;
     int out = 0;
 
-    int ret = sqlite3_exec(db, cmd, callback, &out, &errmsg);
+    int ret = sqlite3_exec(db, cmd, callback1, &out, &errmsg);
 
     if (ret != SQLITE_OK) {
         nob_log(NOB_ERROR, "SQL error: %s\n", errmsg);
