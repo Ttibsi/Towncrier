@@ -96,11 +96,13 @@ const char* get_backup_status(sqlite3* db, int* out_len) {
     // Step 2 - If 0, send() ok message to client
     // Step 3 - If not 0, send() client message to backup
     if (!out) {
-        *out_len = 0;
-        return "";
+        *out_len = 20;
+        return "No backups required\n";
     } else {
-        *out_len = 0;
-        return "";
+        char* msg = 0;
+        sprintf(msg, "%d weeks since last backup\n", out);
+        *out_len = strlen(msg);
+        return msg;
     }
 }
 
