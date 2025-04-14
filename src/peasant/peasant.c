@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "sqlite/sqlite3.h>
+#include "sqlite/sqlite3.h"
+
+// [ ] Peasant
+// 	[ ] Read a file keeping track of when we last updated the known data
+// 	[ ] If that time is over 24 hours ago, ping towncrier
+// 	[ ] Print message out to STDOUT - backup status, last backup, time until next backup
+// 	[ ] Add flag to send message to towncrier that a backup has been made
 
 int cmp_arg(const char* arg, const char* inp) {
     return strncmp(arg, inp) == 0;
