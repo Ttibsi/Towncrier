@@ -10,25 +10,27 @@
 // 	[ ] Add flag to send message to towncrier that a backup has been made
 
 int cmp_arg(const char* arg, const char* inp) {
-    return strncmp(arg, inp) == 0;
+    return strcmp(arg, inp) == 0;
 }
 
 void usage(void) {
     printf("Something goes here\n");
 }
 
-int main(int argc, char* argv) {
+int main(int argc, char** argv) {
     if (argc == 1) {
         // TODO: something
         return 0;
     }
 
-    if (cmp_arg(argv[1], "backup") {
-    } else if (cmp_arg(argv[1], "--help") {
+    if (cmp_arg(argv[1], "backup")) {
+    } else if (cmp_arg(argv[1], "--help")) {
         usage();
         return 0;
     } else {
         usage();
         return 0;
     }
+
+    return 0;
 }

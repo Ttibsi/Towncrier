@@ -114,6 +114,9 @@ const char* parse_message(sqlite3* db, const char* buffer, int* out_len) {
         *out_len = 16;
         return "backup complete\n";
     }
+
+    *out_len = 0;
+    return "";
 }
 
 void call_all_repos(void) {
@@ -174,11 +177,11 @@ int main() {
 
         // Handle message from client
         char buffer[265] = { 0 };
-        int client_fd = accept4(s, 0, 0, SOCK_NONBLOCK);
+        int client_fd = accept(sock_fd, 0, 0);
 
         recv(client_fd, buffer, 256, 0);
         int out_len = 0;
-        const char* msg = parse_message(db, buffer, *out_len);
+        const char* msg = parse_message(db, buffer, &out_len);
         send(client_fd, msg, out_len, 0);
         close(client_fd);
 
