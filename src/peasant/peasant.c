@@ -1,3 +1,4 @@
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +16,8 @@
 // 	[ ] Add flag to send message to towncrier that a backup has been made
 
 #define PORT htons(8080)
-#define SERVER_IP 127.0.0.1
+#define SERVER_IP "127.0.0.1"
+#define MAX_BUF_SIZE 4096
 
 int cmp_arg(const char* arg, const char* inp) {
     return strcmp(arg, inp) == 0;
@@ -56,27 +58,30 @@ int check_last_update(void) {
     return 0;
 }
 
-const char* ping_server(void) {
+void ping_server(char* buf) {
     int s = socket(AF_INET, SOCK_STREAM, 0);
-    if (s < 0) { return "Error"; }
+    if (s < 0) {
+        buf = "Error";
+        return;
+    }
 
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = SERVER_IP;
     server_addr.sin_port = PORT;
+    inet_pton(AF_INET, SERVER_IP, &(server_addr.sin_addr));
 
     int conn = connect(s, (struct sockaddr*)&server_addr, sizeof(server_addr));
     close(s);
     if (conn < 0) {
-        return "Connection failed";
+        buf = "Connection failed";
+        return;
     }
 
-    char buffer[4096];
-    int bytes = recv(s, buffer, sizeof(buffer) - 1, 0);
+    int bytes = recv(s, buf, MAX_BUF_SIZE - 1, 0);
 
-    buffer[bytes] = '\0';
-    return buffer;
+    buf[bytes] = '\0';
+    return;
 }
 
 void complete_backup(void) {}
@@ -89,7 +94,9 @@ int main(int argc, char** argv) {
     if (argc == 1) {
         int over_24h = check_last_update();
         if (over_24h) {
-            printf("%s\n", ping_server());
+            char buffer[MAX_BUF_SIZE];
+            ping_server(buffer);
+            printf("%s\n", buffer);
         }
         return 0;
     }
