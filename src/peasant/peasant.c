@@ -1,7 +1,10 @@
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "sqlite/sqlite3.h"
 
@@ -10,6 +13,9 @@
 // 	[ ] If that time is over 24 hours ago, ping towncrier
 // 	[ ] Print message out to STDOUT - backup status, last backup, time until next backup
 // 	[ ] Add flag to send message to towncrier that a backup has been made
+
+#define PORT htons(8080)
+#define SERVER_IP 127.0.0.1
 
 int cmp_arg(const char* arg, const char* inp) {
     return strcmp(arg, inp) == 0;
@@ -50,7 +56,29 @@ int check_last_update(void) {
     return 0;
 }
 
-const char* ping_server(void) {}
+const char* ping_server(void) {
+    int s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s < 0) { return "Error"; }
+
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = SERVER_IP;
+    server_addr.sin_port = PORT;
+
+    int conn = connect(s, (struct sockaddr*)&server_addr, sizeof(server_addr));
+    close(s);
+    if (conn < 0) {
+        return "Connection failed";
+    }
+
+    char buffer[4096];
+    int bytes = recv(s, buffer, sizeof(buffer) - 1, 0);
+
+    buffer[bytes] = '\0';
+    return buffer;
+}
+
 void complete_backup(void) {}
 
 void usage(void) {
