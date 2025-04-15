@@ -10,10 +10,10 @@
 #include "sqlite/sqlite3.h"
 
 // [ ] Peasant
-// 	[ ] Read a file keeping track of when we last updated the known data
-// 	[ ] If that time is over 24 hours ago, ping towncrier
-// 	[ ] Print message out to STDOUT - backup status, last backup, time until next backup
-// 	[ ] Add flag to send message to towncrier that a backup has been made
+//     [ ] Read a file keeping track of when we last updated the known data
+//     [ ] If that time is over 24 hours ago, ping towncrier
+//     [ ] Print message out to STDOUT - backup status, last backup, time until next backup
+//     [ ] Add flag to send message to towncrier that a backup has been made
 
 #define PORT htons(8080)
 #define SERVER_IP "127.0.0.1"
@@ -58,7 +58,7 @@ int check_last_update(void) {
     return 0;
 }
 
-void ping_server(char* buf) {
+void server_msg(char* buf, const char* msg) {
     int s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
         buf = "Error";
@@ -78,13 +78,20 @@ void ping_server(char* buf) {
         return;
     }
 
+    send(s, msg, strlen(msg), 0);
     int bytes = recv(s, buf, MAX_BUF_SIZE - 1, 0);
 
     buf[bytes] = '\0';
     return;
 }
 
-void complete_backup(void) {}
+void ping_server(char* buf) {
+    server_msg(buf, "ping");
+}
+
+void complete_backup(char* buf) {
+    server_msg(buf, "backup");
+}
 
 void usage(void) {
     printf("Something goes here\n");
@@ -102,7 +109,8 @@ int main(int argc, char** argv) {
     }
 
     if (cmp_arg(argv[1], "backup")) {
-        complete_backup();
+        char buffer[MAX_BUF_SIZE];
+        complete_backup(buffer);
     } else if (cmp_arg(argv[1], "--help")) {
         usage();
     } else {
