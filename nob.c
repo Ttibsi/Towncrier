@@ -11,7 +11,7 @@ int build_towncrier(Nob_Cmd* cmd) {
     nob_cmd_append(
         cmd,
         "build/towncrier",
-        "src/towncrier/towncrier.c",
+        "src/towncrier.c",
         "include/sqlite/sqlite3.c"
     );
 
@@ -24,7 +24,7 @@ int build_peasant(Nob_Cmd* cmd) {
     nob_cmd_append(
         cmd,
         "build/peasant",
-        "src/peasant/peasant.c"
+        "src/peasant.c"
     );
 
     if (!nob_cmd_run_sync_and_reset(cmd)) return 1;

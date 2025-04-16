@@ -1,10 +1,11 @@
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <time.h>
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include "sqlite/sqlite3.h"
@@ -15,8 +16,8 @@
 //     [ ] Print message out to STDOUT - backup status, last backup, time until next backup
 //     [ ] Add flag to send message to towncrier that a backup has been made
 
-#define PORT htons(8080)
-#define SERVER_IP "127.0.0.1"
+#define PORT         htons(8080)
+#define SERVER_IP    "127.0.0.1"
 #define MAX_BUF_SIZE 4096
 
 int cmp_arg(const char* arg, const char* inp) {
@@ -28,18 +29,18 @@ char* read_file_content(const char* path) {
     FILE* fp = fopen(path, "r");
     char* fcontent = NULL;
 
-    if(fp) {
+    if (fp) {
         fseek(fp, 0, SEEK_END);
         int fsize = ftell(fp);
         rewind(fp);
 
-        fcontent = (char*) malloc(sizeof(char) * fsize);
+        fcontent = (char*)malloc(sizeof(char) * fsize);
         fread(fcontent, 1, fsize, fp);
 
         fclose(fp);
     }
 
-    return  fcontent;
+    return fcontent;
 }
 
 int check_last_update(void) {
