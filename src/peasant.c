@@ -43,22 +43,6 @@ char* read_file_content(const char* path) {
     return fcontent;
 }
 
-int check_last_update(void) {
-    char* path = 0;
-    sprintf(path, "%s/.config/towncrier/peasant_datestamp", getenv("HOME"));
-    const char* file_content = read_file_content(path);
-
-    int time_delta = 60 * 60 * 24;
-    time_t yesterday = time(NULL) - time_delta;
-
-    double diff = difftime(yesterday, atoi(file_content));
-    if (diff > 0) {
-        return 1;
-    }
-
-    return 0;
-}
-
 void server_msg(char* buf, const char* msg) {
     int s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
@@ -73,14 +57,15 @@ void server_msg(char* buf, const char* msg) {
     inet_pton(AF_INET, SERVER_IP, &(server_addr.sin_addr));
 
     int conn = connect(s, (struct sockaddr*)&server_addr, sizeof(server_addr));
-    close(s);
     if (conn < 0) {
+        close(s);
         buf = "Connection failed";
         return;
     }
 
     send(s, msg, strlen(msg), 0);
     int bytes = recv(s, buf, MAX_BUF_SIZE - 1, 0);
+    close(s);
 
     buf[bytes] = '\0';
     return;
@@ -100,12 +85,9 @@ void usage(void) {
 
 int main(int argc, char** argv) {
     if (argc == 1) {
-        int over_24h = check_last_update();
-        if (over_24h) {
-            char buffer[MAX_BUF_SIZE];
-            ping_server(buffer);
-            printf("%s\n", buffer);
-        }
+        char buffer[MAX_BUF_SIZE];
+        ping_server(buffer);
+        printf("%s\n", buffer);
         return 0;
     }
 

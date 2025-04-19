@@ -55,14 +55,14 @@ int setup_server(void) {
 
 void mark_completed_backup(sqlite3* db) {
     const char* cmd =
-        "UPDATE towncrier"
-        "SET (backup_completed, completion_time) = (1, CURRENT_TIMESTAMP)"
+        "UPDATE towncrier "
+        "SET (backup_completed, completion_time) = (1, CURRENT_TIMESTAMP) "
         "WHERE backup_time == (SELECT MAX(backup_time) FROM towncrier);";
 
     char* errmsg = 0;
     int ret = sqlite3_exec(db, cmd, NULL, 0, &errmsg);
     if (ret != SQLITE_OK) {
-        nob_log(NOB_ERROR, "SQL error: %s\n", errmsg);
+        nob_log(NOB_ERROR, "%s (%d): SQL error: %s\n", __FILE__, __LINE__, errmsg);
         sqlite3_free(errmsg);
     }
 }
@@ -77,11 +77,11 @@ static int callback2(void* a, int b, char** c, char** d) {
 
 const char* get_backup_status(sqlite3* db, int* out_len) {
     const char* cmd =
-        "SELECT row_nr - 1"
+        "SELECT row_nr - 1 "
         "FROM ("
-        "SELECT ROW_NUMBER() OVER (ORDER BY id DESC) AS row_nr, backup_completed"
+        "SELECT ROW_NUMBER() OVER (ORDER BY id DESC) AS row_nr, backup_completed "
         "FROM towncrier"
-        ") WHERE backup_completed = 1"
+        ") WHERE backup_completed = 1 "
         "LIMIT 1;";
 
     char* errmsg = 0;
@@ -89,18 +89,18 @@ const char* get_backup_status(sqlite3* db, int* out_len) {
 
     int ret = sqlite3_exec(db, cmd, callback2, &out, &errmsg);
     if (ret != SQLITE_OK) {
-        nob_log(NOB_ERROR, "SQL error: %s\n", errmsg);
+        nob_log(NOB_ERROR, "%s (%d): SQL error: %s\n", __FILE__, __LINE__, errmsg);
         sqlite3_free(errmsg);
     }
 
     // Step 2 - If 0, send() ok message to client
     // Step 3 - If not 0, send() client message to backup
     if (!out) {
-        *out_len = 20;
-        return "No backups required\n";
+        *out_len = 19;
+        return "No backups required";
     } else {
         char* msg = 0;
-        sprintf(msg, "%d weeks since last backup\n", out);
+        sprintf(msg, "%d weeks since last backup", out);
         *out_len = strlen(msg);
         return msg;
     }
@@ -108,8 +108,10 @@ const char* get_backup_status(sqlite3* db, int* out_len) {
 
 const char* parse_message(sqlite3* db, const char* buffer, int* out_len) {
     if (strncmp(buffer, "ping", 4) == 0) {
+        nob_log(NOB_INFO, "Ping message recieved.");
         return get_backup_status(db, out_len);
     } else if (strncmp(buffer, "backup", 6) == 0) {
+        nob_log(NOB_INFO, "Backup message recieved.");
         mark_completed_backup(db);
         *out_len = 16;
         return "backup complete\n";
@@ -122,9 +124,7 @@ const char* parse_message(sqlite3* db, const char* buffer, int* out_len) {
 void call_all_repos(void) {
     nob_log(NOB_INFO, "Running all repos");
 
-    // venv/bin/all-repos-clone -C all-repos.json
-    // TODO: Absolute path
-    const char* cmd = "venv/bin/all-repos-clone";
+    const char* cmd = "/home/pi/venv/bin/all-repos-clone";
     execl(cmd, "-C", "all-repos.json", NULL);
 }
 
@@ -148,7 +148,7 @@ int check_extant_record_today(sqlite3* db, struct tm* now) {
     int ret = sqlite3_exec(db, cmd, callback1, &out, &errmsg);
 
     if (ret != SQLITE_OK) {
-        nob_log(NOB_ERROR, "SQL error: %s\n", errmsg);
+        nob_log(NOB_ERROR, "%s (%d): SQL error: %s\n", __FILE__, __LINE__, errmsg);
         sqlite3_free(errmsg);
     }
 
@@ -197,7 +197,7 @@ int main() {
             char* errmsg = 0;
             int ret = sqlite3_exec(db, cmd, NULL, 0, &errmsg);
             if (ret != SQLITE_OK) {
-                nob_log(NOB_ERROR, "SQL error: %s\n", errmsg);
+                nob_log(NOB_ERROR, "%s (%d): SQL error: %s\n", __FILE__, __LINE__, errmsg);
                 sqlite3_free(errmsg);
             }
         }
