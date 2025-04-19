@@ -81,7 +81,9 @@ void complete_backup(char* buf) {
 }
 
 void usage(void) {
-    printf("Something goes here\n");
+    printf("Peasant\n");
+    printf("Default call (`./peasant`) - Request update from the server\n");
+    printf("`backup` - Inform server that a backup has been performed\n");
 }
 
 int main(int argc, char** argv) {
