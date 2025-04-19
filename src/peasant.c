@@ -16,8 +16,9 @@
 //     [ ] Print message out to STDOUT - backup status, last backup, time until next backup
 //     [ ] Add flag to send message to towncrier that a backup has been made
 
-#define PORT         htons(8080)
-#define SERVER_IP    "127.0.0.1"
+#define PORT htons(8080)
+// Pi server IP on local network
+#define SERVER_IP    "192.168.1.7"
 #define MAX_BUF_SIZE 4096
 
 int cmp_arg(const char* arg, const char* inp) {
