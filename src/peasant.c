@@ -10,38 +10,14 @@
 
 #include "sqlite/sqlite3.h"
 
-// [ ] Peasant
-//     [ ] Read a file keeping track of when we last updated the known data
-//     [ ] If that time is over 24 hours ago, ping towncrier
-//     [ ] Print message out to STDOUT - backup status, last backup, time until next backup
-//     [ ] Add flag to send message to towncrier that a backup has been made
-
-#define PORT htons(8080)
 // Pi server IP on local network
-#define SERVER_IP    "192.168.1.7"
+// #define SERVER_IP    "192.168.1.7"
+#define SERVER_IP    "127.0.0.1"
+#define PORT         htons(8080)
 #define MAX_BUF_SIZE 4096
 
 int cmp_arg(const char* arg, const char* inp) {
     return strcmp(arg, inp) == 0;
-}
-
-// src: https://stackoverflow.com/q/3381080
-char* read_file_content(const char* path) {
-    FILE* fp = fopen(path, "r");
-    char* fcontent = NULL;
-
-    if (fp) {
-        fseek(fp, 0, SEEK_END);
-        int fsize = ftell(fp);
-        rewind(fp);
-
-        fcontent = (char*)malloc(sizeof(char) * fsize);
-        fread(fcontent, 1, fsize, fp);
-
-        fclose(fp);
-    }
-
-    return fcontent;
 }
 
 void server_msg(char* buf, const char* msg) {

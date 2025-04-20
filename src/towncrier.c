@@ -15,13 +15,6 @@
 
 #define DB_NAME "towncrier.db"
 
-// [x] Include sqlite, if a db doesn't exist, create it
-// [x] When time is right (sunday, midnight), fork and run all-repos
-// [x] Once all-repos runs, update db with last all-repos run time
-// [x] DB also tracks when each backup was made
-// [ ] When it recieves a "hello" ping fro Peasant, return a message with all the current status
-// values
-
 void setup_database(sqlite3* db) {
     const char* command =
         "CREATE TABLE towncrier("
@@ -96,11 +89,12 @@ const char* get_backup_status(sqlite3* db, int* out_len) {
     // Step 2 - If 0, send() ok message to client
     // Step 3 - If not 0, send() client message to backup
     if (!out) {
-        *out_len = 19;
-        return "No backups required";
+        const char* cmd = "\x1b[32mNo backups required\x1b[0m";
+        *out_len = strlen(cmd);
+        return cmd;
     } else {
         char* msg = 0;
-        sprintf(msg, "%d weeks since last backup", out);
+        sprintf(msg, "\x1b[31m%d weeks since last backup\x1b[0m", out);
         *out_len = strlen(msg);
         return msg;
     }
