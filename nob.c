@@ -3,7 +3,7 @@
 
 void cflags(Nob_Cmd* cmd) {
     const char* compiler = "gcc";
-    nob_cmd_append(cmd, compiler, "-Wall", "-Wextra", "-I", "include", "-o");
+    nob_cmd_append(cmd, compiler, "-Wall", "-g",  "-Wextra", "-I", "include", "-o");
 }
 
 int build_towncrier(Nob_Cmd* cmd) {
