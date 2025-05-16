@@ -15,6 +15,17 @@
 
 #define DB_NAME "towncrier.db"
 
+
+// https://stackoverflow.com/a/31161332
+static int callback(void* ret, int count, char** data, char** cols) {
+	(void)count;
+	(void)cols;
+    int* out = (int*)ret;
+    *out = atoi(data[0]);
+    return 0;
+}
+
+
 void setup_database(sqlite3* db) {
     const char* command =
         "CREATE TABLE towncrier("
@@ -60,27 +71,25 @@ void mark_completed_backup(sqlite3* db) {
     }
 }
 
-static int callback2(void* a, int b, char** c, char** d) {
-    (void)c;
-    (void)d;
-
-    a = &b;
-    return a - a;
-}
 
 const char* get_backup_status(sqlite3* db, int* out_len) {
+	// COALESCE returns the first non-NULL value
+	// param 1 is the actual statement, or if that's NULL it returns that 0
     const char* cmd =
-        "SELECT row_nr - 1 "
-        "FROM ("
-        "SELECT ROW_NUMBER() OVER (ORDER BY id DESC) AS row_nr, backup_completed "
-        "FROM towncrier"
-        ") WHERE backup_completed = 1 "
-        "LIMIT 1;";
+    "SELECT COALESCE("
+    "(SELECT row_nr - 1"
+    " FROM (SELECT ROW_NUMBER() OVER (ORDER BY id DESC) AS row_nr, backup_completed"
+    "       FROM towncrier)"
+    " WHERE backup_completed = 1"
+    " LIMIT 1),"
+    "0"
+	");";
 
     char* errmsg = 0;
     int out = 0;
 
-    int ret = sqlite3_exec(db, cmd, callback2, &out, &errmsg);
+    int ret = sqlite3_exec(db, cmd, callback, &out, &errmsg);
+    printf("out = %d\n", out);
     if (ret != SQLITE_OK) {
         nob_log(NOB_ERROR, "%s (%d): SQL error: %s\n", __FILE__, __LINE__, errmsg);
         sqlite3_free(errmsg);
@@ -118,28 +127,58 @@ const char* parse_message(sqlite3* db, const char* buffer, int* out_len) {
 void call_all_repos(void) {
     nob_log(NOB_INFO, "Running all repos");
 
-    const char* cmd = "/home/pi/venv/bin/all-repos-clone";
-    execl(cmd, "-C", "all-repos.json", NULL);
+    pid_t pid = fork();
+
+    if (pid == 0) {
+	    char* args[] = {
+		    "all-repos-clone",
+		    "-C",
+		    "/home/pi/all-repos.json",
+		    "-j",
+		    "$(nproc)",
+		    NULL
+	    };
+	    execv("/home/pi/venv/bin/all-repos-clone", args);
+
+	    // This line is never reached in child if execv succeeds
+	    perror("execv failed");
+	    exit(1);
+    } else if (pid > 0) {
+	    // Parent process continues here
+	    int status;
+	    waitpid(pid, &status, 0);  // Wait for child to complete
+	    // Continue with rest of your program...
+    } else {
+	    perror("fork failed");
+	    return;
+    }
 }
 
-static int callback1(void* a, int b, char** c, char** d) {
-    (void)c;
-    (void)d;
 
-    a = &b;
-    return a - a;
+char* current_date(void) {
+	time_t current_time = time(NULL);
+	struct tm *local_time = localtime(&current_time);
+	static char date_string[11];
+
+	// Format the date as YYYY-MM-DD
+	strftime(date_string, sizeof(date_string), "%Y-%m-%d", local_time);
+	return date_string;
 }
 
+
+	                                           
 // TODO: Ensure not completed
-int check_extant_record_today(sqlite3* db, struct tm* now) {
+int check_extant_record_today(sqlite3* db) {
     char* cmd = malloc(sizeof(char) * 255);
     sprintf(
-        cmd, "SELECT COUNT(*) * FROM towncrier WHERE backup_time LIKE %%%d-%d-%d%%", now->tm_year,
-        now->tm_mon, now->tm_yday);
+        cmd,
+       	"SELECT COUNT(*) FROM towncrier WHERE backup_time LIKE \"%s%%\";",
+       	current_date()
+	);
     char* errmsg = 0;
     int out = 0;
 
-    int ret = sqlite3_exec(db, cmd, callback1, &out, &errmsg);
+    int ret = sqlite3_exec(db, cmd, callback, &out, &errmsg);
 
     if (ret != SQLITE_OK) {
         nob_log(NOB_ERROR, "%s (%d): SQL error: %s\n", __FILE__, __LINE__, errmsg);
@@ -180,14 +219,14 @@ int main() {
         close(client_fd);
 
         // Only trigger on sunday -- handle backups
-        if (tmp->tm_wday == 7) {
-            if (check_extant_record_today(db, tmp)) {
-                continue;
-            }
+	if (tmp->tm_wday == 7) {
+		if (check_extant_record_today(db)) {
+			continue;
+		}
 
             call_all_repos();
 
-            const char* cmd = "INSERT INTO towncrier DEFAULT VALUES";
+            const char* cmd = "INSERT INTO towncrier DEFAULT VALUES;";
             char* errmsg = 0;
             int ret = sqlite3_exec(db, cmd, NULL, 0, &errmsg);
             if (ret != SQLITE_OK) {
