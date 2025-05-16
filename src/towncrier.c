@@ -89,7 +89,6 @@ const char* get_backup_status(sqlite3* db, int* out_len) {
     int out = 0;
 
     int ret = sqlite3_exec(db, cmd, callback, &out, &errmsg);
-    printf("out = %d\n", out);
     if (ret != SQLITE_OK) {
         nob_log(NOB_ERROR, "%s (%d): SQL error: %s\n", __FILE__, __LINE__, errmsg);
         sqlite3_free(errmsg);
