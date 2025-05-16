@@ -74,9 +74,9 @@ const char* get_backup_status(sqlite3* db, int* out_len) {
     // param 1 is the actual statement, or if that's NULL it returns that 0
     const char* cmd =
         "SELECT COALESCE("
-        "(SELECT row_nr - 1"
-        " FROM (SELECT ROW_NUMBER() OVER (ORDER BY id DESC) AS row_nr, backup_completed"
-        "       FROM towncrier)"
+        "(SELECT row_nr - 1 FROM"
+        "    (SELECT ROW_NUMBER() OVER (ORDER BY id DESC) AS row_nr, backup_completed"
+        "    FROM towncrier)"
         " WHERE backup_completed = 1"
         " LIMIT 1),"
         "0"
