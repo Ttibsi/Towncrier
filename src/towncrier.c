@@ -40,6 +40,13 @@ void setup_database(sqlite3* db) {
         sqlite3_free(errmsg);
     } else {
         nob_log(NOB_INFO, "Constructing db...");
+	const char* cmd = "INSERT INTO towncrier DEFAULT VALUES;";
+	char* errmsg = 0;
+	int ret = sqlite3_exec(db, cmd, NULL, 0, &errmsg);
+	if (ret != SQLITE_OK) {
+		nob_log(NOB_ERROR, "%s (%d): SQL error: %s\n", __FILE__, __LINE__, errmsg);
+		sqlite3_free(errmsg);
+	}
     }
 }
 
