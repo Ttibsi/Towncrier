@@ -31,7 +31,7 @@ void setup_database(sqlite3* db) {
         "backup_time text default CURRENT_TIMESTAMP,"
         "backup_completed integer default 0,"
         "completion_time text,"
-	"manual integer"
+        "manual integer"
         ");";
 
     char* errmsg = 0;
@@ -41,24 +41,24 @@ void setup_database(sqlite3* db) {
         sqlite3_free(errmsg);
     } else {
         nob_log(NOB_INFO, "Constructing db...");
-	const char* cmd = "INSERT INTO towncrier DEFAULT VALUES;";
-	char* errmsg = 0;
-	int ret = sqlite3_exec(db, cmd, NULL, 0, &errmsg);
-	if (ret != SQLITE_OK) {
-		nob_log(NOB_ERROR, "%s (%d): SQL error: %s\n", __FILE__, __LINE__, errmsg);
-		sqlite3_free(errmsg);
-	}
+        const char* cmd = "INSERT INTO towncrier DEFAULT VALUES;";
+        char* errmsg = 0;
+        int ret = sqlite3_exec(db, cmd, NULL, 0, &errmsg);
+        if (ret != SQLITE_OK) {
+            nob_log(NOB_ERROR, "%s (%d): SQL error: %s\n", __FILE__, __LINE__, errmsg);
+            sqlite3_free(errmsg);
+        }
 
-	const char* cmd =
-		"UPDATE towncrier "
-		"SET (backup_completed, completion_time, manual) = (1, CURRENT_TIMESTAMP, 1) "
-		"WHERE backup_time == (SELECT MAX(backup_time) FROM towncrier);";
+        cmd =
+            "UPDATE towncrier "
+            "SET (backup_completed, completion_time, manual) = (1, CURRENT_TIMESTAMP, 1) "
+            "WHERE backup_time == (SELECT MAX(backup_time) FROM towncrier);";
 
-	ret = sqlite3_exec(db, cmd, NULL, 0, &errmsg);
-	if (ret != SQLITE_OK) {
-		nob_log(NOB_ERROR, "%s (%d): SQL error: %s\n", __FILE__, __LINE__, errmsg);
-		sqlite3_free(errmsg);
-	}
+        ret = sqlite3_exec(db, cmd, NULL, 0, &errmsg);
+        if (ret != SQLITE_OK) {
+            nob_log(NOB_ERROR, "%s (%d): SQL error: %s\n", __FILE__, __LINE__, errmsg);
+            sqlite3_free(errmsg);
+        }
     }
 }
 
