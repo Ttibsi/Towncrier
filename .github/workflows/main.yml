@@ -1,0 +1,14 @@
+name: main
+on:
+  pull_request:
+    branches: [ main ]
+jobs:
+  pre_commit_run:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - run: sudo apt-get install llvm-19
+      - run: clang nob.c -o nob
+      - run: ./nob
+      - uses: pre-commit/action@v3.0.1
