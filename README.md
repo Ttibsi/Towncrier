@@ -9,5 +9,10 @@ cc nob.c -o nob
 ./nob
 ```
 
-On a server, run `./towncrier 2>> towncrier.log &` to write to a log file and
-run in the background, then add the client `peasant` to your bashrc.
+On a server, run:
+```console
+$ nohup ./build/towncrier 2>> tc.log &
+```
+
+to write to a log file and run in the background, then add the client 
+`peasant` to your bashrc.
