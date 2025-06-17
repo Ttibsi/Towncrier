@@ -145,8 +145,9 @@ void call_all_repos(void) {
     pid_t pid = fork();
 
     if (pid == 0) {
-        char* args[] = {
-            "all-repos-clone", "-C", "/home/pi/all-repos.json", "-j", "$(nproc)", NULL
+        char* args[] = { "all-repos-clone", "-C",
+                         "/home/pi/all-repos.json"
+                         ", NULL
         };
         execv("/home/pi/venv/bin/all-repos-clone", args);
 
