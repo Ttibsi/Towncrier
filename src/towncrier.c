@@ -229,7 +229,7 @@ int main() {
         close(client_fd);
 
         // Only trigger on sunday -- handle backups
-        if (tmp->tm_wday == 2) {
+        if (tmp->tm_wday == 0) {
             if (check_extant_record_today(db)) {
                 nob_log(NOB_INFO, "Today's record already exists. Skipping...");
                 continue;
