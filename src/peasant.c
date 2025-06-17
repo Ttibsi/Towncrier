@@ -11,8 +11,8 @@
 #include "sqlite/sqlite3.h"
 
 // Pi server IP on local network
-// #define SERVER_IP    "192.168.1.7"
-#define SERVER_IP    "127.0.0.1"
+#define SERVER_IP "192.168.1.7"
+// #define SERVER_IP    "127.0.0.1"
 #define PORT         htons(8080)
 #define MAX_BUF_SIZE 4096
 

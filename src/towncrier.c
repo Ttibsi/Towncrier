@@ -63,7 +63,7 @@ void setup_database(sqlite3* db) {
 }
 
 int setup_server(void) {
-    int s = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    int s = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in addr = { .sin_family = AF_INET,
                                 .sin_port = htons(8080),
                                 .sin_addr.s_addr = INADDR_ANY };
@@ -117,7 +117,7 @@ const char* get_backup_status(sqlite3* db, int* out_len) {
         *out_len = strlen(cmd);
         return cmd;
     } else {
-        char* msg = 0;
+        static char msg[50] = { 0 };
         sprintf(msg, "\x1b[31m%d weeks since last backup\x1b[0m", out);
         *out_len = strlen(msg);
         return msg;
@@ -214,21 +214,29 @@ int main() {
         // Handle message from client
         char buffer[265] = { 0 };
         int client_fd = accept(sock_fd, 0, 0);
+        if (client_fd < 0) {
+            continue;
+        }
 
-        recv(client_fd, buffer, 256, 0);
-        int out_len = 0;
-        const char* msg = parse_message(db, buffer, &out_len);
-        send(client_fd, msg, out_len, 0);
+        int bytes_rec = recv(client_fd, buffer, 256, 0);
+        if (bytes_rec) {
+            int out_len = 0;
+            const char* msg = parse_message(db, buffer, &out_len);
+            send(client_fd, msg, out_len, 0);
+        }
+
         close(client_fd);
 
         // Only trigger on sunday -- handle backups
-        if (tmp->tm_wday == 7) {
+        if (tmp->tm_wday == 2) {
             if (check_extant_record_today(db)) {
+                nob_log(NOB_INFO, "Today's record already exists. Skipping...");
                 continue;
             }
 
             call_all_repos();
 
+            nob_log(NOB_INFO, "Inserting record into db");
             const char* cmd = "INSERT INTO towncrier DEFAULT VALUES;";
             char* errmsg = 0;
             int ret = sqlite3_exec(db, cmd, NULL, 0, &errmsg);
