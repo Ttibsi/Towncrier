@@ -36,7 +36,7 @@ void server_msg(char* buf, const char* msg) {
     int conn = connect(s, (struct sockaddr*)&server_addr, sizeof(server_addr));
     if (conn < 0) {
         close(s);
-        buf = "Connection failed";
+        strcpy(buf, "Connection failed\0");
         return;
     }
 
