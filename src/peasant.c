@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +7,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "sqlite/sqlite3.h"
@@ -18,6 +20,101 @@
 
 int cmp_arg(const char* arg, const char* inp) {
     return strcmp(arg, inp) == 0;
+}
+
+void perform_backup() {
+    const char* source_path =
+        "/run/user/1000/gvfs/smb-share:server=raspberrypi.local,share=pishare/";
+    const char* dest_path = "/mnt/Elements/";
+
+    // Check if source directory exists and is accessible
+    if (access(source_path, R_OK) != 0) {
+        fprintf(stderr, "Error: Cannot access source path: %s\n", source_path);
+        return;
+    }
+
+    // First, mount the drive
+    printf("Mounting /dev/sda to /mnt/Elements...\n");
+    pid_t mount_pid = fork();
+
+    if (mount_pid == 0) {
+        // Child process - execute mount command with user permissions
+        execl(
+            "/usr/bin/sudo", "sudo", "mount", "-o", "uid=1000,gid=1000,umask=0022", "/dev/sda2",
+            "/mnt/Elements", (char*)NULL);
+
+        // If execl fails
+        fprintf(stderr, "Error: Failed to execute mount command\n");
+        exit(1);
+
+    } else if (mount_pid > 0) {
+        // Parent process - wait for mount to complete
+        int mount_status;
+        waitpid(mount_pid, &mount_status, 0);
+
+        if (WIFEXITED(mount_status)) {
+            int exit_code = WEXITSTATUS(mount_status);
+            if (exit_code != 0) {
+                fprintf(stderr, "Mount failed with exit code: %d\n", exit_code);
+                return;
+            }
+            printf("Mount successful\n");
+        } else {
+            fprintf(stderr, "Mount process terminated abnormally\n");
+            return;
+        }
+
+    } else {
+        // Fork failed
+        perror("fork (mount)");
+        return;
+    }
+
+    // Give the system a moment to complete the mount
+    sleep(1);
+
+    // Check if destination directory is now accessible
+    if (access(dest_path, W_OK) != 0) {
+        fprintf(stderr, "Error: Cannot access destination path after mount: %s\n", dest_path);
+        fprintf(stderr, "Error details: %s\n", strerror(errno));
+        return;
+    }
+
+    // Simple approach - let rsync output directly to terminal
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        // Child process - execute rsync with verbose output
+        execl(
+            "/usr/bin/rsync", "rsync", source_path, dest_path, "--progress",
+            "-vzvrutU",  // Added extra 'v' for more verbose output
+            (char*)NULL);
+
+        // If execl fails
+        fprintf(stderr, "Error: Failed to execute rsync\n");
+        exit(1);
+
+    } else if (pid > 0) {
+        // Parent process - wait for child to complete
+        int status;
+        waitpid(pid, &status, 0);
+
+        if (WIFEXITED(status)) {
+            int exit_code = WEXITSTATUS(status);
+            if (exit_code == 0) {
+                printf("Backup completed successfully\n");
+            } else {
+                fprintf(stderr, "Rsync failed with exit code: %d\n", exit_code);
+            }
+        } else {
+            fprintf(stderr, "Rsync process terminated abnormally\n");
+        }
+
+    } else {
+        // Fork failed
+        perror("fork");
+        return;
+    }
 }
 
 void server_msg(char* buf, const char* msg) {
@@ -53,6 +150,7 @@ void ping_server(char* buf) {
 }
 
 void complete_backup(char* buf) {
+    perform_backup();
     server_msg(buf, "backup");
 }
 
