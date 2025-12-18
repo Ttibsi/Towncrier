@@ -23,8 +23,9 @@ int cmp_arg(const char* arg, const char* inp) {
 }
 
 void perform_backup() {
-    const char* source_path =
-        "/run/user/1000/gvfs/smb-share:server=raspberrypi.local,share=pishare/";
+    // const char* source_path =
+    //     "/run/user/1000/gvfs/smb-share:server=raspberrypi.local,share=pishare/";
+    const char* source_path = "/mnt/PiShare";
     const char* dest_path = "/mnt/Elements/";
 
     // Check if source directory exists and is accessible
