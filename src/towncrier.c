@@ -15,8 +15,8 @@
 #define NOB_IMPLEMENTATION
 #include "nob/nob.h"
 
-#define DB_NAME "db.db"
-#define SERVER_PORT 8080
+#define DB_NAME        "db.db"
+#define SERVER_PORT    8080
 #define SERVER_BACKLOG 8
 
 static int int_callback(void* ret, int count, char** data, char** cols) {
@@ -30,12 +30,13 @@ static int int_callback(void* ret, int count, char** data, char** cols) {
 }
 
 static void print_help(void) {
-    printf("Usage: towncrier <command>\n"
-            "\n"
-            "Commands:\n"
-            "  watch   Run the socket server and respond to peasant requests\n"
-            "  update  Run the scheduled updater (cron)\n"
-            "  help    Show this help message\n");
+    printf(
+        "Usage: towncrier <command>\n"
+        "\n"
+        "Commands:\n"
+        "  watch   Run the socket server and respond to peasant requests\n"
+        "  update  Run the scheduled updater (cron)\n"
+        "  help    Show this help message\n");
 }
 
 static bool file_exists(const char* path) {

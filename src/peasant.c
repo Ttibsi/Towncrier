@@ -12,21 +12,22 @@
 #include <unistd.h>
 
 // Pi server IP on local network
-#define SERVER_IP "192.168.1.7"
-#define SERVER_PORT 8080
+#define SERVER_IP    "192.168.1.7"
+#define SERVER_PORT  8080
 #define MAX_BUF_SIZE 4096
 
 #define ELEMENTS_DEVICE "/dev/sda2"
-#define ELEMENTS_MOUNT "/mnt/Elements"
-#define SOURCE_PATH "/mnt/PiShare"
+#define ELEMENTS_MOUNT  "/mnt/Elements"
+#define SOURCE_PATH     "/mnt/PiShare"
 
 static void print_help(void) {
-    printf("Usage: peasant <command>\n"
-            "\n"
-            "Commands:\n"
-            "  ping    Ask the server for last backup status\n"
-            "  update  Run backup then notify server\n"
-            "  help    Show this help message\n");
+    printf(
+        "Usage: peasant <command>\n"
+        "\n"
+        "Commands:\n"
+        "  ping    Ask the server for last backup status\n"
+        "  update  Run backup then notify server\n"
+        "  help    Show this help message\n");
 }
 
 static bool is_mountpoint(const char* mountpoint) {
@@ -65,8 +66,9 @@ static bool mount_elements(void) {
 
     pid_t pid = fork();
     if (pid == 0) {
-        execl("/usr/bin/sudo", "sudo", "mount", "-o", "uid=1000,gid=1000,umask=0022",
-              ELEMENTS_DEVICE, ELEMENTS_MOUNT, (char*)NULL);
+        execl(
+            "/usr/bin/sudo", "sudo", "mount", "-o", "uid=1000,gid=1000,umask=0022", ELEMENTS_DEVICE,
+            ELEMENTS_MOUNT, (char*)NULL);
         perror("exec mount failed");
         _exit(1);
     }
@@ -83,8 +85,9 @@ static bool mount_elements(void) {
     }
 
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-        fprintf(stderr, "Mount failed with exit code: %d\n",
-                WIFEXITED(status) ? WEXITSTATUS(status) : -1);
+        fprintf(
+            stderr, "Mount failed with exit code: %d\n",
+            WIFEXITED(status) ? WEXITSTATUS(status) : -1);
         return false;
     }
 
@@ -126,8 +129,9 @@ static bool run_rsync(void) {
 
     pid_t pid = fork();
     if (pid == 0) {
-        execl("/usr/bin/rsync", "rsync", SOURCE_PATH, ELEMENTS_MOUNT, "--progress", "-vzvrutU",
-              (char*)NULL);
+        execl(
+            "/usr/bin/rsync", "rsync", SOURCE_PATH, ELEMENTS_MOUNT, "--progress", "-vzvrutU",
+            (char*)NULL);
         perror("exec rsync failed");
         _exit(1);
     }
@@ -144,8 +148,9 @@ static bool run_rsync(void) {
     }
 
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-        fprintf(stderr, "Rsync failed with exit code: %d\n",
-                WIFEXITED(status) ? WEXITSTATUS(status) : -1);
+        fprintf(
+            stderr, "Rsync failed with exit code: %d\n",
+            WIFEXITED(status) ? WEXITSTATUS(status) : -1);
         return false;
     }
 
