@@ -14,5 +14,5 @@ On a server, run:
 $ nohup ./build/towncrier 2>> tc.log &
 ```
 
-to write to a log file and run in the background, then add the client 
+to write to a log file and run in the background, then add the client
 `peasant` to your bashrc.
