@@ -126,29 +126,29 @@ static const char* handle_command(sqlite3* db, const char* buffer, int* out_len)
     if (token_len == 4 && strncmp(buffer, "ping", 4) == 0) {
         int days = days_since_last_completed(db);
         if (days == -2) {
-            const char* msg = "error: unable to read backup status\n";
+            const char* msg = "\x1b[31merror: unable to read backup status\n\x1b[0m";
             *out_len = (int)strlen(msg);
             return msg;
         }
         if (days == -1) {
-            const char* msg = "no completed backups yet\n";
+            const char* msg = "\x1b[33mno completed backups yet\n\x1b[0m";
             *out_len = (int)strlen(msg);
             return msg;
         }
 
         static char msg[64];
-        snprintf(msg, sizeof(msg), "%d days since last backup\n", days);
+        snprintf(msg, sizeof(msg), "\x1b[31m%d days since last backup\n\x1b[0m", days);
         *out_len = (int)strlen(msg);
         return msg;
     }
 
     if (token_len == 6 && strncmp(buffer, "backup", 6) == 0) {
         if (!mark_completed_backup(db)) {
-            const char* msg = "error: backup update failed\n";
+            const char* msg = "\x1b[31merror: backup update failed\n\x1b[0m";
             *out_len = (int)strlen(msg);
             return msg;
         }
-        const char* msg = "backup complete\n";
+        const char* msg = "\x1b[32mbackup complete\n\x1b[0m";
         *out_len = (int)strlen(msg);
         return msg;
     }
